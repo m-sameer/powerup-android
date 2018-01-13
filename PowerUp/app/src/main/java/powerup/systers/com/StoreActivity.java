@@ -2,14 +2,18 @@ package powerup.systers.com;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
@@ -108,7 +112,7 @@ public class StoreActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 currentPage = 0;
-                storeItemTypeindex = 0;
+                storeItemTypeindex = PowerUpUtils.HAIR_CODE;
                 adapter.refresh(allDataSet.get(storeItemTypeindex).subList(0, 6));
             }
         });
@@ -117,7 +121,7 @@ public class StoreActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 currentPage = 0;
-                storeItemTypeindex = 1;
+                storeItemTypeindex = PowerUpUtils.CLOTHES_CODE;
                 adapter.refresh(allDataSet.get(storeItemTypeindex).subList(0, PowerUpUtils.CLOTHES_IMAGES.length%6));
             }
         });
@@ -126,7 +130,7 @@ public class StoreActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 currentPage = 0;
-                storeItemTypeindex = 2;
+                storeItemTypeindex = PowerUpUtils.ACCESSORIES_CODE;
                 adapter.refresh(allDataSet.get(storeItemTypeindex).subList(0, PowerUpUtils.ACCESSORIES_IMAGES.length%6));
             }
         });
@@ -305,30 +309,43 @@ public class StoreActivity extends AppCompatActivity {
 
                         TextView itemPoints = (TextView) v.findViewById(R.id.item_points);
                         int index = calculatePosition(position)+1;
-                        if (storeItemTypeindex == 0) { //hair
-                            setAvatarHair(index);
-                            if (getmDbHandler().getPurchasedHair(index) == 0){
-                                SessionHistory.totalPoints -= Integer.parseInt(itemPoints.getText().toString());
-                                karmaPoints.setText(String.valueOf(SessionHistory.totalPoints));
-
-                                getmDbHandler().setPurchasedHair(index);
-                            }
-
-                        } else if (storeItemTypeindex == 1) { //clothes
-                            setAvatarClothes(index);
-                            if (getmDbHandler().getPurchasedClothes(index) == 0){
-                                SessionHistory.totalPoints -= Integer.parseInt(itemPoints.getText().toString());
-                                karmaPoints.setText(String.valueOf(SessionHistory.totalPoints));
-                                getmDbHandler().setPurchasedClothes(index);
-                            }
-
-                        } else if (storeItemTypeindex == 2) { //accessories
-                            setAvatarAccessories(index);
-                            if (getmDbHandler().getPurchasedAccessories(index) == 0){
-                                SessionHistory.totalPoints -= Integer.parseInt(itemPoints.getText().toString());
-                                karmaPoints.setText(String.valueOf(SessionHistory.totalPoints));
-                                getmDbHandler().setPurchasedAccessories(index);
-                            }
+                        switch (storeItemTypeindex) {
+                            case PowerUpUtils.HAIR_CODE:  //hair
+                                if (mDbHandler.getAvatarHair() == index) {
+                                    showAlreadySelectedDialog();
+                                } else {
+                                    setAvatarHair(index);
+                                }
+                                if (getmDbHandler().getPurchasedHair(index) == 0) {
+                                    SessionHistory.totalPoints -= Integer.parseInt(itemPoints.getText().toString());
+                                    karmaPoints.setText(String.valueOf(SessionHistory.totalPoints));
+                                    getmDbHandler().setPurchasedHair(index);
+                                }
+                                break;
+                            case PowerUpUtils.CLOTHES_CODE:  //clothes
+                                if (mDbHandler.getAvatarCloth() == index) {
+                                    showAlreadySelectedDialog();
+                                } else {
+                                    setAvatarClothes(index);
+                                }
+                                if (getmDbHandler().getPurchasedClothes(index) == 0) {
+                                    SessionHistory.totalPoints -= Integer.parseInt(itemPoints.getText().toString());
+                                    karmaPoints.setText(String.valueOf(SessionHistory.totalPoints));
+                                    getmDbHandler().setPurchasedClothes(index);
+                                }
+                                break;
+                            case PowerUpUtils.ACCESSORIES_CODE:  //accessories
+                                if (mDbHandler.getAvatarAccessory() == index) {
+                                    showAlreadySelectedDialog();
+                                } else {
+                                    setAvatarAccessories(index);
+                                }
+                                if (getmDbHandler().getPurchasedAccessories(index) == 0) {
+                                    SessionHistory.totalPoints -= Integer.parseInt(itemPoints.getText().toString());
+                                    karmaPoints.setText(String.valueOf(SessionHistory.totalPoints));
+                                    getmDbHandler().setPurchasedAccessories(index);
+                                }
+                                break;
                         }
                         adapter.refresh(adapter.storeItems); // will update change the background if any is not available
 
@@ -359,14 +376,32 @@ public class StoreActivity extends AppCompatActivity {
             return storeItem;
         }
 
+        private void showAlreadySelectedDialog() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(StoreActivity.this);
+            builder.setTitle(R.string.already_selected_title)
+                    .setMessage(R.string.already_selected_message);
+            builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            ColorDrawable drawable = new ColorDrawable(Color.WHITE);
+            drawable.setAlpha(200);
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setBackgroundDrawable(drawable);
+            }
+            dialog.show();
+        }
     }
 
     public int getPurchasedStatus(int index) {
-        if (storeItemTypeindex == 0) { //hair
+        if (storeItemTypeindex == PowerUpUtils.HAIR_CODE) { //hair
             return getmDbHandler().getPurchasedHair(index);
-        } else if (storeItemTypeindex == 1) { //clothes
+        } else if (storeItemTypeindex == PowerUpUtils.CLOTHES_CODE) { //clothes
             return getmDbHandler().getPurchasedClothes(index);
-        } else if (storeItemTypeindex == 2) { //accessories
+        } else if (storeItemTypeindex == PowerUpUtils.ACCESSORIES_CODE) { //accessories
             return getmDbHandler().getPurchasedAccessories(index);
         }
         return 0;
